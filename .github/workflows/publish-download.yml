@@ -3,6 +3,12 @@ name: Publish public download
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to publish
+        required: true
+        default: v0.0.9
 
 permissions:
   contents: read
@@ -14,9 +20,10 @@ jobs:
       - name: Download release asset
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
         shell: pwsh
         run: |
-          gh release download "${{ github.event.release.tag_name }}" `
+          gh release download "$env:RELEASE_TAG" `
             --repo "${{ github.repository }}" `
             --pattern "PingNotify-win-x64*.zip" `
             --dir "$env:RUNNER_TEMP"
@@ -24,23 +31,25 @@ jobs:
           if ($null -eq $asset) { throw "Release asset not found." }
           Copy-Item $asset.FullName "$env:RUNNER_TEMP\PingNotify-latest.zip"
 
-      - name: Sign in to Azure
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
       - name: Publish anonymous download
         env:
           STORAGE_ACCOUNT: notificationstatus
-          RELEASE_VERSION: ${{ github.event.release.tag_name }}
+          SAS_TOKEN: ${{ secrets.AZURE_CREDENTIALS_SAS_BLOB }}
+          RELEASE_VERSION: ${{ github.event.release.tag_name || inputs.tag }}
           TEMP: ${{ runner.temp }}
-        shell: pwsh
         run: |
           az storage container create `
             --account-name $env:STORAGE_ACCOUNT `
             --name downloads `
             --public-access blob `
-            --auth-mode login `
+            --sas-token $env:SAS_TOKEN `
+            --output none
+
+          az storage container set-permission `
+            --account-name $env:STORAGE_ACCOUNT `
+            --name downloads `
+            --public-access blob `
+            --sas-token $env:SAS_TOKEN `
             --output none
 
           az storage blob upload `
@@ -50,7 +59,7 @@ jobs:
             --file "$env:TEMP\PingNotify-latest.zip" `
             --overwrite `
             --content-type application/zip `
-            --auth-mode login `
+            --sas-token $env:SAS_TOKEN `
             --output none
 
           $manifest = @{ version = $env:RELEASE_VERSION; asset = "PingNotify-latest.zip" } |
@@ -64,5 +73,5 @@ jobs:
             --file $manifestPath `
             --overwrite `
             --content-type application/json `
-            --auth-mode login `
+            --sas-token $env:SAS_TOKEN `
             --output none
