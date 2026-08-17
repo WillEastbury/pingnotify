@@ -14,6 +14,8 @@ internal static class Program
     private static void Main()
     {
         ApplicationConfiguration.Initialize();
+        if (!StorageSetup.EnsureConfigured())
+            return;
         Application.Run(new TrayContext());
     }
 }

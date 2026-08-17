@@ -54,6 +54,8 @@ Set `notificationShare` as a **user** environment variable using the complete co
 
 If the variable is omitted, the app creates and uses the local fallback directories described above.
 
+On first run without `notificationShare`, PingNotify asks how to proceed. Choose **Yes** to enter the SAS URI; PingNotify saves it as a user-scoped environment variable and restarts. Choose **No** to use TSClient drive redirection instead, or **Cancel** to exit.
+
 ### Build from source
 
 Install the .NET 8 SDK, then run:
