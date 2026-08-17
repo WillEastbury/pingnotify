@@ -114,7 +114,7 @@ Build it with the .NET 10 SDK and Android workload:
 dotnet build .\PingNotify.Android.csproj
 ```
 
-On first launch, enter the private container SAS URI. The value is stored in Android app-private preferences; use a read/list-only SAS for the phone where possible. The app refreshes automatically every 2.5 minutes and has a manual Refresh button.
+On first launch, enter the private container SAS URI. The value is stored in Android app-private preferences; use a read/list-only SAS for the phone where possible. The app reads remote metadata every 2 minutes by default; the interval can be changed in the app and is stored locally. A manual Refresh button is also available.
 
 Android 403 errors usually mean the entered SAS is for the public download container or lacks `r` (read) and `l` (list) permissions. Enter the private `notificationShare` container SAS instead; never use the public release-download SAS.
 

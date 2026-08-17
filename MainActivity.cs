@@ -18,13 +18,22 @@ public sealed class MainActivity : Activity
     private TextView _results = null!;
     private Button _refresh = null!;
     private string? _sasUri;
+    private int _readMinutes = 2;
     private readonly Handler _handler = new(Looper.MainLooper!);
+    private readonly Action _scheduledRefresh;
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
         _http.Timeout = TimeSpan.FromSeconds(20);
-        _sasUri = GetPreferences(global::Android.Content.FileCreationMode.Private).GetString("notificationShare", null);
+        var preferences = GetPreferences(global::Android.Content.FileCreationMode.Private);
+        _sasUri = preferences.GetString("notificationShare", null);
+        _readMinutes = preferences.GetInt("readMinutes", 2);
+        _scheduledRefresh = () =>
+        {
+            _ = RefreshAsync();
+            _handler.PostDelayed(_scheduledRefresh, _readMinutes * 60 * 1000L);
+        };
         BuildView();
         _ = RefreshAsync();
     }
@@ -46,11 +55,23 @@ public sealed class MainActivity : Activity
             InputType = global::Android.Text.InputTypes.ClassText | global::Android.Text.InputTypes.TextVariationUri
         };
         root.AddView(_sasInput);
+        var readInput = new EditText(this)
+        {
+            Hint = "Remote read interval in minutes",
+            Text = _readMinutes.ToString(),
+            InputType = global::Android.Text.InputTypes.ClassNumber
+        };
+        root.AddView(readInput);
         var save = new Button(this) { Text = "Save private read access" };
         save.Click += (_, _) =>
         {
             _sasUri = _sasInput.Text?.Trim();
-            GetPreferences(global::Android.Content.FileCreationMode.Private).Edit()?.PutString("notificationShare", _sasUri)?.Apply();
+            if (int.TryParse(readInput.Text, out var minutes) && minutes is >= 1 and <= 1440)
+                _readMinutes = minutes;
+            GetPreferences(global::Android.Content.FileCreationMode.Private).Edit()?
+                .PutString("notificationShare", _sasUri)?
+                .PutInt("readMinutes", _readMinutes)?
+                .Apply();
             _ = RefreshAsync();
         };
         root.AddView(save);
@@ -160,7 +181,8 @@ public sealed class MainActivity : Activity
     protected override void OnResume()
     {
         base.OnResume();
-        _handler.PostDelayed(() => _ = RefreshAsync(), 150_000);
+        _handler.RemoveCallbacksAndMessages(null);
+        _handler.PostDelayed(_scheduledRefresh, _readMinutes * 60 * 1000L);
     }
 
     protected override void OnDestroy()
