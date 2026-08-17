@@ -358,8 +358,10 @@ internal sealed class BlobStore : IDisposable
 
         var uri = ContainerUri("restype=container&comp=list");
         var xml = XDocument.Parse(await _http.GetStringAsync(uri));
-        return xml.Descendants("Blob")
-            .Elements("Name")
+        return xml.Descendants()
+            .Where(element => element.Name.LocalName == "Blob")
+            .Elements()
+            .Where(element => element.Name.LocalName == "Name")
             .Select(element => element.Value)
             .ToArray();
     }
