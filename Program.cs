@@ -34,6 +34,7 @@ internal sealed class TrayContext : ApplicationContext
     private readonly Label _flyoutLabel;
     private readonly System.Windows.Forms.Timer _flyoutTimer;
     private readonly string _machineName = SanitizeMachineName(Environment.MachineName);
+    private readonly string _version = $"Version {typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "unknown"}";
     private IReadOnlyList<RemoteNotification> _remote = [];
     private string _signature = string.Empty;
     private DateTime _lastHoverUtc;
@@ -193,6 +194,8 @@ internal sealed class TrayContext : ApplicationContext
     private void RebuildMenu()
     {
         _menu.Items.Clear();
+        _menu.Items.Add(_version).Enabled = false;
+        _menu.Items.Add(new ToolStripSeparator());
         _menu.Items.Add($"Other machines: {_remote.Count}").Enabled = false;
         _menu.Items.Add(FormatRemoteList(_remote)).Enabled = false;
         _menu.Items.Add(new ToolStripSeparator());
@@ -237,6 +240,8 @@ internal sealed class TrayContext : ApplicationContext
         _icon.Icon = SystemIcons.Error;
         _icon.Text = "PingNotify: error";
         _menu.Items.Clear();
+        _menu.Items.Add(_version).Enabled = false;
+        _menu.Items.Add(new ToolStripSeparator());
         _menu.Items.Add(message).Enabled = false;
         var exit = _menu.Items.Add("Exit");
         exit.Click += (_, _) => ExitThread();
