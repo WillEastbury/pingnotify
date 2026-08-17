@@ -32,7 +32,7 @@ internal sealed class TrayContext : ApplicationContext
     private readonly System.Windows.Forms.Timer _remoteTimer;
     private readonly System.Windows.Forms.Timer _updateTimer;
     private readonly UpdateService _updates = new();
-    private bool _listenerAttached;
+    private readonly PollingSettings _polling = PollingSettings.Load();
     private readonly Form _flyout;
     private readonly Label _flyoutLabel;
     private readonly System.Windows.Forms.Timer _flyoutTimer;
@@ -61,10 +61,10 @@ internal sealed class TrayContext : ApplicationContext
                 _flyout.Hide();
         };
         _flyoutTimer.Start();
-        _localTimer = new System.Windows.Forms.Timer { Interval = 10 * 60 * 1000 };
+        _localTimer = new System.Windows.Forms.Timer { Interval = _polling.WriteMinutes * 60 * 1000 };
         _localTimer.Tick += async (_, _) => await PublishLocalMetadataAsync();
         _localTimer.Start();
-        _remoteTimer = new System.Windows.Forms.Timer { Interval = 150 * 1000 };
+        _remoteTimer = new System.Windows.Forms.Timer { Interval = _polling.ReadMinutes * 60 * 1000 };
         _remoteTimer.Tick += async (_, _) => await RefreshRemoteMetadataAsync();
         _remoteTimer.Start();
         _updateTimer = new System.Windows.Forms.Timer { Interval = 12 * 60 * 60 * 1000 };
@@ -85,11 +85,6 @@ internal sealed class TrayContext : ApplicationContext
             {
                 ShowError($"Notification listener access is {access}. Enable access in Windows Settings.");
                 return;
-            }
-            if (!_listenerAttached)
-            {
-                listener.NotificationChanged += async (_, _) => await PublishLocalMetadataAsync();
-                _listenerAttached = true;
             }
             await PublishLocalMetadataAsync();
             await RefreshRemoteMetadataAsync();
@@ -206,6 +201,15 @@ internal sealed class TrayContext : ApplicationContext
         _menu.Items.Add($"Other machines: {_remote.Count}").Enabled = false;
         _menu.Items.Add(FormatRemoteList(_remote)).Enabled = false;
         _menu.Items.Add(new ToolStripSeparator());
+        var polling = _menu.Items.Add("Polling settings...");
+        polling.Click += (_, _) =>
+        {
+            if (PollingSettingsDialog.Show(_polling))
+            {
+                _localTimer.Interval = _polling.WriteMinutes * 60 * 1000;
+                _remoteTimer.Interval = _polling.ReadMinutes * 60 * 1000;
+            }
+        };
         var copy = _menu.Items.Add("Remote Copy...");
         copy.Click += async (_, _) => await RemoteCopyAsync();
         var paste = _menu.Items.Add("Remote Paste...");

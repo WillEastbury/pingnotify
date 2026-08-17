@@ -128,7 +128,7 @@ The repository currently contains the compiled executable, but not a signed MSIX
 
 PingNotify checks the public Blob manifest when it starts and every 12 hours afterward. It sends a lightweight `HEAD` request and compares the manifest ETag with the locally persisted ETag under `%LOCALAPPDATA%\PingNotify`, so it does not call GitHub or download the ZIP unless the manifest changes. If a newer self-contained build is available, it asks for confirmation, replaces the installed files, and restarts.
 
-Local notification metadata is published every 10 minutes. Remote machine metadata is scanned every 2.5 minutes.
+Local notification metadata is published every 2 minutes by default. Remote machine metadata is scanned every 2 minutes by default. Both intervals can be changed from the tray menu’s **Polling settings...** entry and are stored locally in `%LOCALAPPDATA%\PingNotify\settings.json`.
 
 ### Slack notifications
 
