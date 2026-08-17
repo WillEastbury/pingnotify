@@ -187,7 +187,7 @@ internal sealed class TrayContext : ApplicationContext
         var cursor = Cursor.Position;
         _flyout.Location = new Point(
             Math.Max(0, cursor.X - _flyout.Width + 20),
-            Math.Max(0, cursor.Y - _flyout.Height - 8));
+            Math.Max(0, cursor.Y - _flyout.Height - 36));
         _flyout.Show();
     }
 
