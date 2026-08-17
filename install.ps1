@@ -59,6 +59,16 @@ try {
     }
 
     $buildPath = $executable.Directory.FullName
+    if (Test-Path -LiteralPath $installedExecutable -PathType Leaf) {
+        $running = Get-Process -Name 'PingNotify' -ErrorAction SilentlyContinue |
+            Where-Object {
+                try { $_.MainModule.FileName -eq $installedExecutable } catch { $false }
+            }
+        foreach ($process in $running) {
+            Stop-Process -Id $process.Id -Force
+        }
+        Start-Sleep -Milliseconds 500
+    }
     New-Item -ItemType Directory -Path $InstallPath -Force | Out-Null
     Get-ChildItem -LiteralPath $buildPath | Copy-Item -Destination $InstallPath -Recurse -Force
     $shell = New-Object -ComObject WScript.Shell
