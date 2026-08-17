@@ -134,7 +134,7 @@ Local notification metadata is published every 10 minutes. Remote machine metada
 
 Slack must be configured to deliver notifications through **Windows Action Center/native notifications**. Slack’s own in-app popups are not Windows toast notifications and cannot be observed by `UserNotificationListener`. Also verify that Windows notifications are enabled for Slack and that Slack is installed and launched from its registered Start menu shortcut.
 
-The app also includes an opt-in best-effort Slack fallback using Windows UI Automation. It counts visible Slack notification entries in memory and writes only `Slack`, quantity, and the current timestamp; UI text is discarded immediately. Because Windows does not expose a stable notification-center API for every Slack build, this fallback may require Notification Center entries to be visible and is not guaranteed on every Windows version.
+The app also includes a best-effort UI Automation fallback for apps whose toasts are visible but not returned by `UserNotificationListener`. It counts visible Slack entries as `Slack`, and BurntToast/PowerShell entries as `Scout`, writing only the app label, quantity, and current timestamp; UI text is discarded immediately. Because Windows does not expose a stable notification-center API for every client, this fallback may require Notification Center entries to be visible and is not guaranteed on every Windows version.
 
 ## Tray features
 

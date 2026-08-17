@@ -107,9 +107,8 @@ internal sealed class TrayContext : ApplicationContext
                     group => new NotificationMetadata(
                         group.LongCount(),
                         group.Max(notification => notification.CreationTime)));
-            var slackFallback = UiAutomationNotificationSource.GetSlackMetadata();
-            if (slackFallback is not null)
-                local["Slack"] = slackFallback;
+            foreach (var fallback in UiAutomationNotificationSource.GetKnownMetadata())
+                local[fallback.Key] = fallback.Value;
             await _store.WriteMachineMetadataAsync(_machineName, local);
         }
         catch (Exception ex)

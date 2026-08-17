@@ -7,29 +7,34 @@ internal static class UiAutomationNotificationSource
 {
     private static bool _unavailable;
 
-    public static NotificationMetadata? GetSlackMetadata()
+    public static IReadOnlyDictionary<string, NotificationMetadata> GetKnownMetadata()
     {
         if (_unavailable)
-            return null;
+            return new Dictionary<string, NotificationMetadata>();
         try
         {
             var condition = new PropertyCondition(
                 AutomationElement.ControlTypeProperty,
                 ControlType.ListItem);
             var entries = AutomationElement.RootElement.FindAll(TreeScope.Descendants, condition);
-            var count = 0L;
+            var counts = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
             foreach (AutomationElement entry in entries)
             {
                 var name = entry.Current.Name;
-                var isSlack = name.Contains("Slack", StringComparison.OrdinalIgnoreCase);
+                var app = name.Contains("Slack", StringComparison.OrdinalIgnoreCase)
+                    ? "Slack"
+                    : name.Contains("BurntToast", StringComparison.OrdinalIgnoreCase) ||
+                      name.Contains("PowerShell", StringComparison.OrdinalIgnoreCase)
+                        ? "Scout"
+                        : null;
                 name = string.Empty;
-                if (isSlack)
-                    count++;
+                if (app is not null)
+                    counts[app] = counts.TryGetValue(app, out var count) ? count + 1 : 1;
             }
 
-            return count == 0
-                ? null
-                : new NotificationMetadata(count, DateTimeOffset.UtcNow);
+            return counts.ToDictionary(
+                item => item.Key,
+                item => new NotificationMetadata(item.Value, DateTimeOffset.UtcNow));
         }
         catch (ElementNotAvailableException)
         {
