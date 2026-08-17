@@ -23,6 +23,7 @@ internal static class Program
 internal sealed class TrayContext : ApplicationContext
 {
     private readonly BlobStore _store;
+    private readonly Icon _neutralIcon = NeutralIcon.Create();
     private readonly NotifyIcon _icon;
     private readonly ContextMenuStrip _menu = new();
     private readonly System.Windows.Forms.Timer _localTimer;
@@ -43,7 +44,7 @@ internal sealed class TrayContext : ApplicationContext
         _flyout = CreateFlyout(out _flyoutLabel);
         _icon = new NotifyIcon
         {
-            Icon = SystemIcons.Information,
+            Icon = _neutralIcon,
             Visible = true,
             Text = "PingNotify",
             ContextMenuStrip = _menu
@@ -124,7 +125,7 @@ internal sealed class TrayContext : ApplicationContext
             if (nextSignature != _signature)
             {
                 _signature = nextSignature;
-                _icon.Icon = _remote.Count > 0 ? SystemIcons.Warning : SystemIcons.Information;
+                _icon.Icon = _remote.Count > 0 ? SystemIcons.Information : _neutralIcon;
                 if (_flyout.Visible)
                     _flyoutLabel.Text = FormatRemoteList(_remote);
                 RebuildMenu();
@@ -249,6 +250,7 @@ internal sealed class TrayContext : ApplicationContext
         _flyoutTimer.Stop();
         _icon.Visible = false;
         _icon.Dispose();
+        _neutralIcon.Dispose();
         _flyout.Dispose();
         _menu.Dispose();
         _store.Dispose();

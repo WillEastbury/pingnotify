@@ -108,6 +108,8 @@ The app also includes an opt-in best-effort Slack fallback using Windows UI Auto
 
 The tray icon changes when another machine has pending notifications. Hovering over it opens a borderless flyout containing the full `Machine: Application (Quantity)` list. The context menu provides the same list plus:
 
+The neutral application icon means there is nothing to do. The blue information icon means notifications are waiting. An error icon is reserved for communication, authentication, or other operational failures.
+
 - **Remote Copy**: requires confirmation that the entered string leaves the current trust boundary. Never enter sensitive data, credentials, secrets, or regulated content.
 - **Remote Paste**: displays `remote-copy.txt` in a read-only text box for manual copying, then clears the shared blob when the dialog closes. It is a one-shot shared value.
 
