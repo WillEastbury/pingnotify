@@ -9,18 +9,20 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <AssemblyName>PingNotify</AssemblyName>
     <RootNamespace>PingNotify</RootNamespace>
-    <Version>0.0.16</Version>
-    <AssemblyVersion>0.0.16.0</AssemblyVersion>
-    <FileVersion>0.0.16.0</FileVersion>
+    <Version>0.0.17</Version>
+    <AssemblyVersion>0.0.17.0</AssemblyVersion>
+    <FileVersion>0.0.17.0</FileVersion>
     <WindowsSdkPackageVersion>10.0.26100.87</WindowsSdkPackageVersion>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="MainActivity.cs" />
     <Reference Include="UIAutomationClient">
       <HintPath>$(ProgramFiles)\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\10.0.11\ref\net10.0\UIAutomationClient.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="UIAutomationTypes">
       <HintPath>$(ProgramFiles)\dotnet\packs\Microsoft.WindowsDesktop.App.Ref\10.0.11\ref\net10.0\UIAutomationTypes.dll</HintPath>
+      <Private>false</Private>
     </Reference>
   </ItemGroup>
 </Project>
