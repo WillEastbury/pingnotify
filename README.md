@@ -75,6 +75,8 @@ PingNotify checks the latest GitHub release when it starts and every 12 hours af
 
 Slack must be configured to deliver notifications through **Windows Action Center/native notifications**. Slack’s own in-app popups are not Windows toast notifications and cannot be observed by `UserNotificationListener`. Also verify that Windows notifications are enabled for Slack and that Slack is installed and launched from its registered Start menu shortcut.
 
+The app also includes an opt-in best-effort Slack fallback using Windows UI Automation. It counts visible Slack notification entries in memory and writes only `Slack`, quantity, and the current timestamp; UI text is discarded immediately. Because Windows does not expose a stable notification-center API for every Slack build, this fallback may require Notification Center entries to be visible and is not guaranteed on every Windows version.
+
 ## Tray features
 
 The tray icon changes when another machine has pending notifications. Hovering over it opens a borderless flyout containing the full `Machine: Application (Quantity)` list. The context menu provides the same list plus:
