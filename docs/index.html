@@ -102,7 +102,7 @@
         <h1>Know where the toast is.</h1>
         <p>PingNotify gives you a quiet, cross-machine view of pending notifications across devboxes, RDP sessions, SSDs, and SAWs — without moving the message itself.</p>
         <div class="actions">
-          <a class="button" href="#install">Get started</a>
+          <a class="button" href="#install">Install the app</a>
           <a class="button light" href="https://github.com/WillEastbury/pingnotify">Read the source</a>
         </div>
       </div>
@@ -182,21 +182,16 @@
     <section id="install" class="wrap">
       <div class="section-heading">
         <div class="eyebrow">Install</div>
-        <h2>Start from the source.</h2>
-        <p class="lead">Set the user-scoped SAS environment variable, then build the .NET tray app. Package it with the included manifest for Windows notification-listener access.</p>
+        <h2>Install the app.</h2>
+        <p class="lead">Download the latest tagged build, configure the user-scoped SAS environment variable, and package it with the included manifest for Windows notification-listener access.</p>
       </div>
       <div class="install">
-        <pre><code>git clone https://github.com/WillEastbury/pingnotify.git
-cd pingnotify
-dotnet restore
-dotnet build
-
-# Build output:
-# bin\Debug\net8.0-windows10.0.19041.0</code></pre>
+        <pre><code>$r=Invoke-RestMethod https://api.github.com/repos/WillEastbury/pingnotify/releases/latest;$z="$env:TEMP\PingNotify.zip";$x="$env:TEMP\PingNotify";Invoke-WebRequest $r.zipball_url -OutFile $z;Expand-Archive $z $x -Force;$s=Get-ChildItem $x -Directory|Select-Object -First 1;$i="$env:LOCALAPPDATA\PingNotify";New-Item $i -ItemType Directory -Force|Out-Null;Copy-Item "$($s.FullName)\bin\Debug\net8.0-windows10.0.19041.0\*" $i -Recurse -Force;Start-Process "$i\PingNotify.exe"</code></pre>
         <div class="note">
           <h3>One important detail</h3>
           <p><code>notificationShare</code> should contain the complete container SAS URI, configured through Windows user environment variables. Never commit it to the repository.</p>
-          <a class="button" href="https://github.com/WillEastbury/pingnotify">Open repository ↗</a>
+          <p>The command follows the repository’s latest tagged release and installs its committed build into <code>%LOCALAPPDATA%\PingNotify</code>.</p>
+          <a class="button" href="https://github.com/WillEastbury/pingnotify/releases/latest">View latest release ↗</a>
         </div>
       </div>
     </section>
