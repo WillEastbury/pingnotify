@@ -1,0 +1,68 @@
+name: Publish public download
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    steps:
+      - name: Download release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          gh release download "${{ github.event.release.tag_name }}" `
+            --repo "${{ github.repository }}" `
+            --pattern "PingNotify-win-x64*.zip" `
+            --dir "$env:RUNNER_TEMP"
+          $asset = Get-ChildItem "$env:RUNNER_TEMP\PingNotify-win-x64*.zip" | Select-Object -First 1
+          if ($null -eq $asset) { throw "Release asset not found." }
+          Copy-Item $asset.FullName "$env:RUNNER_TEMP\PingNotify-latest.zip"
+
+      - name: Sign in to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Publish anonymous download
+        env:
+          STORAGE_ACCOUNT: notificationstatus
+          RELEASE_VERSION: ${{ github.event.release.tag_name }}
+          TEMP: ${{ runner.temp }}
+        shell: pwsh
+        run: |
+          az storage container create `
+            --account-name $env:STORAGE_ACCOUNT `
+            --name downloads `
+            --public-access blob `
+            --auth-mode login `
+            --output none
+
+          az storage blob upload `
+            --account-name $env:STORAGE_ACCOUNT `
+            --container-name downloads `
+            --name PingNotify-latest.zip `
+            --file "$env:TEMP\PingNotify-latest.zip" `
+            --overwrite `
+            --content-type application/zip `
+            --auth-mode login `
+            --output none
+
+          $manifest = @{ version = $env:RELEASE_VERSION; asset = "PingNotify-latest.zip" } |
+            ConvertTo-Json -Compress
+          $manifestPath = "$env:TEMP\latest.json"
+          Set-Content -Path $manifestPath -Value $manifest -Encoding utf8
+          az storage blob upload `
+            --account-name $env:STORAGE_ACCOUNT `
+            --container-name downloads `
+            --name latest.json `
+            --file $manifestPath `
+            --overwrite `
+            --content-type application/json `
+            --auth-mode login `
+            --output none
