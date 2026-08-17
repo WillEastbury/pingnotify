@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Xml.Linq;
 using Android.App;
+using Android.Content;
 using Android.OS;
 using Android.Graphics;
 using Android.Views;
@@ -23,7 +24,7 @@ public sealed class MainActivity : Activity
     {
         base.OnCreate(savedInstanceState);
         _http.Timeout = TimeSpan.FromSeconds(20);
-        _sasUri = GetPreferences(FileCreationMode.Private).GetString("notificationShare", null);
+        _sasUri = GetPreferences(global::Android.Content.FileCreationMode.Private).GetString("notificationShare", null);
         BuildView();
         _ = RefreshAsync();
     }
@@ -42,14 +43,14 @@ public sealed class MainActivity : Activity
         {
             Hint = "Private container SAS URI",
             Text = _sasUri,
-            InputType = Android.Text.InputTypes.ClassText | Android.Text.InputTypes.TextVariationUri
+            InputType = global::Android.Text.InputTypes.ClassText | global::Android.Text.InputTypes.TextVariationUri
         };
         root.AddView(_sasInput);
         var save = new Button(this) { Text = "Save private read access" };
         save.Click += (_, _) =>
         {
             _sasUri = _sasInput.Text?.Trim();
-            GetPreferences(FileCreationMode.Private).Edit()?.PutString("notificationShare", _sasUri)?.Apply();
+            GetPreferences(global::Android.Content.FileCreationMode.Private).Edit()?.PutString("notificationShare", _sasUri)?.Apply();
             _ = RefreshAsync();
         };
         root.AddView(save);
@@ -84,7 +85,7 @@ public sealed class MainActivity : Activity
             var rows = new List<string>();
             foreach (var blob in blobs.Where(name => name.EndsWith(".json", StringComparison.OrdinalIgnoreCase)))
             {
-                var machine = Path.GetFileNameWithoutExtension(blob);
+                var machine = System.IO.Path.GetFileNameWithoutExtension(blob);
                 var document = JsonDocument.Parse(await GetTextAsync(
                     BlobUri(container, blob),
                     $"reading {blob}"));
@@ -148,8 +149,8 @@ public sealed class MainActivity : Activity
         {
             _results.Text = rows.Count == 0
                 ? "No pending notifications."
-                : string.Join(Environment.NewLine + Environment.NewLine, rows);
-            _status.Text = $"Read {DateTime.Now:t}";
+                : string.Join(System.Environment.NewLine + System.Environment.NewLine, rows);
+            _status.Text = $"Read {System.DateTime.Now:t}";
         });
     }
 
