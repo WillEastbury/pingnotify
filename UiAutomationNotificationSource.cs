@@ -4,8 +4,12 @@ namespace PingNotify;
 
 internal static class UiAutomationNotificationSource
 {
+    private static bool _unavailable;
+
     public static NotificationMetadata? GetSlackMetadata()
     {
+        if (_unavailable)
+            return null;
         try
         {
             var condition = new PropertyCondition(
@@ -36,6 +40,21 @@ internal static class UiAutomationNotificationSource
         }
         catch (InvalidOperationException)
         {
+            return null;
+        }
+        catch (TypeInitializationException)
+        {
+            _unavailable = true;
+            return null;
+        }
+        catch (FileNotFoundException)
+        {
+            _unavailable = true;
+            return null;
+        }
+        catch (FileLoadException)
+        {
+            _unavailable = true;
             return null;
         }
     }
