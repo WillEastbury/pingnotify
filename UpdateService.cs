@@ -7,7 +7,8 @@ namespace PingNotify;
 
 internal sealed class UpdateService : IDisposable
 {
-    private const string Repository = "WillEastbury/pingnotify";
+    private const string ManifestUrl = "https://notificationstatus.blob.core.windows.net/public/latest.json";
+    private const string AssetUrl = "https://notificationstatus.blob.core.windows.net/public/PingNotify-latest.zip";
     private readonly HttpClient _http = new();
     private readonly string _checkStatePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -29,22 +30,23 @@ internal sealed class UpdateService : IDisposable
                     return null;
             }
 
-            using var request = new HttpRequestMessage(
-                HttpMethod.Get,
-                $"https://api.github.com/repos/{Repository}/releases/latest");
-            request.Headers.UserAgent.ParseAdd("PingNotify-Updater/0.0.6");
-            request.Headers.Accept.ParseAdd("application/vnd.github+json");
-            using var response = await _http.SendAsync(request);
-            if ((int)response.StatusCode == 429)
-            {
-                await SaveNextCheckAsync(DateTimeOffset.UtcNow.AddHours(1));
+            using var head = await _http.SendAsync(new HttpRequestMessage(HttpMethod.Head, ManifestUrl));
+            if (head.StatusCode == System.Net.HttpStatusCode.NotFound)
                 return null;
-            }
-            response.EnsureSuccessStatusCode();
-            await SaveNextCheckAsync(DateTimeOffset.UtcNow.AddHours(12));
-            using var document = JsonDocument.Parse(await response.Content.ReadAsStreamAsync());
+            head.EnsureSuccessStatusCode();
+            var etag = head.Headers.ETag?.Tag;
+            var previousState = File.Exists(_checkStatePath)
+                ? JsonSerializer.Deserialize<UpdateCheckState>(await File.ReadAllTextAsync(_checkStatePath))
+                : null;
+            await SaveStateAsync(DateTimeOffset.UtcNow.AddHours(12), etag);
+            if (!string.IsNullOrWhiteSpace(etag) && etag == previousState?.ETag)
+                return null;
+
+            using var manifestResponse = await _http.GetAsync(ManifestUrl);
+            manifestResponse.EnsureSuccessStatusCode();
+            using var document = JsonDocument.Parse(await manifestResponse.Content.ReadAsStreamAsync());
             var root = document.RootElement;
-            var tag = root.GetProperty("tag_name").GetString()?.TrimStart('v');
+            var tag = root.GetProperty("version").GetString()?.TrimStart('v');
             if (!Version.TryParse(tag, out var latest))
                 return null;
 
@@ -52,17 +54,7 @@ internal sealed class UpdateService : IDisposable
             if (latest <= current)
                 return null;
 
-            var asset = root.GetProperty("assets").EnumerateArray()
-                .FirstOrDefault(item =>
-                    item.GetProperty("name").GetString()?.StartsWith("PingNotify-win-x64", StringComparison.OrdinalIgnoreCase) == true &&
-                    item.GetProperty("name").GetString()?.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) == true);
-            if (asset.ValueKind == JsonValueKind.Undefined)
-                return null;
-
-            return new AvailableUpdate(
-                latest,
-                asset.GetProperty("browser_download_url").GetString()
-                    ?? throw new InvalidOperationException("The update asset URL is missing."));
+            return new AvailableUpdate(latest, AssetUrl);
         }
 
         finally
@@ -71,12 +63,12 @@ internal sealed class UpdateService : IDisposable
         }
     }
 
-    private async Task SaveNextCheckAsync(DateTimeOffset nextCheckUtc)
+    private async Task SaveStateAsync(DateTimeOffset nextCheckUtc, string? etag)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(_checkStatePath)!);
         await File.WriteAllTextAsync(
             _checkStatePath,
-            JsonSerializer.Serialize(new UpdateCheckState(nextCheckUtc)));
+            JsonSerializer.Serialize(new UpdateCheckState(nextCheckUtc, etag)));
     }
 
     public async Task InstallAsync(AvailableUpdate update, int currentProcessId)
@@ -129,4 +121,4 @@ internal sealed class UpdateService : IDisposable
 }
 
 internal sealed record AvailableUpdate(Version Version, string AssetUrl);
-internal sealed record UpdateCheckState(DateTimeOffset NextCheckUtc);
+internal sealed record UpdateCheckState(DateTimeOffset NextCheckUtc, string? ETag);
