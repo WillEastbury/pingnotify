@@ -33,33 +33,26 @@ jobs:
 
       - name: Publish anonymous download
         env:
-          STORAGE_ACCOUNT: notificationstatus
-          SAS_TOKEN: ${{ secrets.AZURE_CREDENTIALS_SAS_BLOB }}
+          SAS_URI: ${{ secrets.AZURE_CREDENTIALS_SAS_BLOB }}
           RELEASE_VERSION: ${{ github.event.release.tag_name || inputs.tag }}
           TEMP: ${{ runner.temp }}
         run: |
-          az storage container create `
-            --account-name $env:STORAGE_ACCOUNT `
-            --name downloads `
-            --public-access blob `
-            --sas-token $env:SAS_TOKEN `
-            --output none
-
-          az storage container set-permission `
-            --account-name $env:STORAGE_ACCOUNT `
-            --name downloads `
-            --public-access blob `
-            --sas-token $env:SAS_TOKEN `
-            --output none
+          $sasUri = [Uri]$env:SAS_URI
+          $account = $sasUri.Host.Split('.')[0]
+          $container = $sasUri.AbsolutePath.Trim('/')
+          $sasToken = $sasUri.Query.TrimStart('?')
+          if ([string]::IsNullOrWhiteSpace($account) -or [string]::IsNullOrWhiteSpace($container) -or [string]::IsNullOrWhiteSpace($sasToken)) {
+            throw 'AZURE_CREDENTIALS_SAS_BLOB must be a complete container SAS URI.'
+          }
 
           az storage blob upload `
-            --account-name $env:STORAGE_ACCOUNT `
-            --container-name downloads `
+            --account-name $account `
+            --container-name $container `
             --name PingNotify-latest.zip `
             --file "$env:TEMP\PingNotify-latest.zip" `
             --overwrite `
             --content-type application/zip `
-            --sas-token $env:SAS_TOKEN `
+            --sas-token $sasToken `
             --output none
 
           $manifest = @{ version = $env:RELEASE_VERSION; asset = "PingNotify-latest.zip" } |
@@ -67,11 +60,11 @@ jobs:
           $manifestPath = "$env:TEMP\latest.json"
           Set-Content -Path $manifestPath -Value $manifest -Encoding utf8
           az storage blob upload `
-            --account-name $env:STORAGE_ACCOUNT `
-            --container-name downloads `
+            --account-name $account `
+            --container-name $container `
             --name latest.json `
             --file $manifestPath `
             --overwrite `
             --content-type application/json `
-            --sas-token $env:SAS_TOKEN `
+            --sas-token $sasToken `
             --output none

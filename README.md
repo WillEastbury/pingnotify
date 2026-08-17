@@ -59,7 +59,7 @@ The self-contained release executable and dependencies are distributed in the la
 
 The installer is idempotent: after the first install, running it again starts the local copy without contacting GitHub. Use `.\install.ps1 -ForceUpdate` when you explicitly want to check for and install the latest release. PingNotify itself performs its separate, rate-limited update check every 12 hours.
 
-The installer downloads from the anonymous stable endpoint `https://notificationstatus.blob.core.windows.net/downloads/latest.json`. A GitHub Action publishes that manifest and `PingNotify-latest.zip` to the separate public `downloads` container whenever a GitHub release is published. Configure the repository secret `AZURE_CREDENTIALS` with an Azure service-principal login that can manage blobs in the `notificationstatus` account.
+The installer downloads from the anonymous stable endpoint `https://notificationstatus.blob.core.windows.net/public/latest.json`. A GitHub Action publishes that manifest and `PingNotify-latest.zip` to the public container addressed by `AZURE_CREDENTIALS_SAS_BLOB` whenever a GitHub release is published. The secret must contain the complete container SAS URI with write/create permissions.
 
 ### Configure storage
 

@@ -2,7 +2,7 @@
 param(
     [string]$InstallPath = (Join-Path $env:LOCALAPPDATA 'PingNotify'),
     [switch]$ForceUpdate,
-    [string]$DownloadBaseUri = 'https://notificationstatus.blob.core.windows.net/downloads'
+    [string]$DownloadBaseUri = 'https://notificationstatus.blob.core.windows.net/public'
 )
 
 $ErrorActionPreference = 'Stop'
