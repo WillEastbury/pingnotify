@@ -57,7 +57,13 @@ The self-contained release executable and dependencies are distributed in the la
 
 `bin\Debug\net9.0-windows10.0.19041.0\`
 
-The installer is idempotent: after the first install, running it again starts the local copy without contacting GitHub. Use `.\install.ps1 -ForceUpdate` when you explicitly want to check for and install the latest release. PingNotify itself performs its separate, rate-limited update check every 12 hours.
+The installer is idempotent: after the first install, running it again starts the local copy without contacting GitHub. It installs to `%LOCALAPPDATA%\PingNotify`, creates `PingNotify.lnk` in the user Start Menu, and creates a Startup shortcut so the tray agent starts when the user signs in. Use `.\install.ps1 -ForceUpdate` when you explicitly want to check for and install the latest release. PingNotify itself performs its separate, rate-limited update check every 12 hours.
+
+Expected paths:
+
+- Executable: `%LOCALAPPDATA%\PingNotify\PingNotify.exe`
+- Start Menu shortcut: `%APPDATA%\Microsoft\Windows\Start Menu\Programs\PingNotify.lnk`
+- Startup shortcut: `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\PingNotify.lnk`
 
 Run the installer directly from the anonymous Blob endpoint:
 

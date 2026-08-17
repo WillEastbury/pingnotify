@@ -39,6 +39,16 @@ try {
     $buildPath = $executable.Directory.FullName
     New-Item -ItemType Directory -Path $InstallPath -Force | Out-Null
     Get-ChildItem -LiteralPath $buildPath | Copy-Item -Destination $InstallPath -Recurse -Force
+    $shell = New-Object -ComObject WScript.Shell
+    $startMenuPath = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\PingNotify.lnk'
+    $startupPath = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\Startup\PingNotify.lnk'
+    foreach ($shortcutPath in @($startMenuPath, $startupPath)) {
+        $shortcut = $shell.CreateShortcut($shortcutPath)
+        $shortcut.TargetPath = $installedExecutable
+        $shortcut.WorkingDirectory = $InstallPath
+        $shortcut.Description = 'PingNotify notification status tray agent'
+        $shortcut.Save()
+    }
     Write-Host "Installed $($manifest.version) to $InstallPath"
     Start-Process -FilePath (Join-Path $InstallPath 'PingNotify.exe')
 }

@@ -190,7 +190,7 @@
         <div class="note">
           <h3>One important detail</h3>
           <p><code>notificationShare</code> should contain the complete container SAS URI, configured through Windows user environment variables. Never commit it to the repository.</p>
-          <p>Review the small installer script before running it. The first run follows the latest tagged release, installs the self-contained build into <code>%LOCALAPPDATA%\PingNotify</code>, and launches the tray agent. Later runs use the local copy without contacting GitHub; use <code>-ForceUpdate</code> only when you want to check for a new release.</p>
+          <p>Review the small installer script before running it. The first run downloads the latest Blob-hosted build into <code>%LOCALAPPDATA%\PingNotify</code>, creates Start Menu and sign-in Startup shortcuts, and launches the tray agent. Later runs use the local copy without contacting GitHub; use <code>-ForceUpdate</code> only when you want to check for a new release.</p>
           <a class="button" href="https://github.com/WillEastbury/pingnotify/releases/latest">View latest release ↗</a>
         </div>
       </div>
