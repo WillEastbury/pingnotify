@@ -7,10 +7,32 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $installedExecutable = Join-Path $InstallPath 'PingNotify.exe'
+$manifestUrl = "$($DownloadBaseUri.TrimEnd('/'))/latest.json"
 
-if ((Test-Path -LiteralPath $installedExecutable -PathType Leaf) -and -not $ForceUpdate) {
-    Write-Host "PingNotify is already installed at $InstallPath."
-    Write-Host 'Starting the local installation without contacting GitHub.'
+$installedVersion = if (Test-Path -LiteralPath $installedExecutable -PathType Leaf) {
+    (Get-Item -LiteralPath $installedExecutable).VersionInfo.ProductVersion
+} else {
+    $null
+}
+
+try {
+    $manifest = Invoke-RestMethod $manifestUrl
+}
+catch {
+    if ($null -ne $installedVersion -and -not $ForceUpdate) {
+        Write-Host "Could not check the latest version. Starting installed version $installedVersion."
+        Start-Process -FilePath $installedExecutable
+        return
+    }
+    throw
+}
+
+$remoteVersion = $null
+$localVersion = $null
+[void][Version]::TryParse(([string]$manifest.version).TrimStart('v'), [ref]$remoteVersion)
+[void][Version]::TryParse(([string]$installedVersion).TrimStart('v'), [ref]$localVersion)
+if ($null -ne $installedVersion -and -not $ForceUpdate -and $null -ne $remoteVersion -and $null -ne $localVersion -and $localVersion -ge $remoteVersion) {
+    Write-Host "PingNotify is already current at version $installedVersion."
     Start-Process -FilePath $installedExecutable
     return
 }
@@ -20,13 +42,13 @@ $archive = Join-Path $env:TEMP 'PingNotify-latest.zip'
 
 try {
     Write-Host 'Finding the latest PingNotify build...'
-    $manifest = Invoke-RestMethod "$($DownloadBaseUri.TrimEnd('/'))/latest.json"
     $downloadUri = "$($DownloadBaseUri.TrimEnd('/'))/PingNotify-latest.zip"
     if ([string]::IsNullOrWhiteSpace($manifest.version)) {
         throw 'The download manifest is missing a version.'
     }
 
-    Write-Host "Downloading $($manifest.version)..."
+    Write-Host "Version to install: $($manifest.version)"
+    Write-Host "Downloading PingNotify $($manifest.version)..."
     Invoke-WebRequest -Uri $downloadUri -OutFile $archive
     Expand-Archive -LiteralPath $archive -DestinationPath $temporaryRoot -Force
 
