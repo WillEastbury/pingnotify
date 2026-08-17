@@ -85,7 +85,9 @@ public sealed class MainActivity : Activity
             foreach (var blob in blobs.Where(name => name.EndsWith(".json", StringComparison.OrdinalIgnoreCase)))
             {
                 var machine = Path.GetFileNameWithoutExtension(blob);
-                var document = JsonDocument.Parse(await _http.GetStringAsync(BlobUri(container, blob)));
+                var document = JsonDocument.Parse(await GetTextAsync(
+                    BlobUri(container, blob),
+                    $"reading {blob}"));
                 foreach (var property in document.RootElement.EnumerateObject())
                 {
                     if (property.NameEquals("_pingnotify")) continue;
@@ -96,6 +98,10 @@ public sealed class MainActivity : Activity
                 }
             }
             SetResults(rows);
+        }
+        catch (HttpRequestException ex)
+        {
+            SetStatus($"Azure read failed: {ex.Message}");
         }
         catch (Exception ex)
         {
@@ -111,13 +117,23 @@ public sealed class MainActivity : Activity
     {
         var parts = container.AbsoluteUri.Split('?', 2);
         var uri = $"{parts[0].TrimEnd('/')}?restype=container&comp=list&{parts[1]}";
-        var xml = XDocument.Parse(await _http.GetStringAsync(uri));
+        var xml = XDocument.Parse(await GetTextAsync(uri, "listing the notification container"));
         return xml.Descendants()
             .Where(element => element.Name.LocalName == "Blob")
             .Elements()
             .Where(element => element.Name.LocalName == "Name")
             .Select(element => element.Value)
             .ToArray();
+    }
+
+    private async Task<string> GetTextAsync(string uri, string operation)
+    {
+        using var response = await _http.GetAsync(uri);
+        if (!response.IsSuccessStatusCode)
+            throw new HttpRequestException(
+                $"{operation} returned HTTP {(int)response.StatusCode} ({response.ReasonPhrase}). " +
+                "The SAS must be for the private notification container and include read (r) and list (l) permissions.");
+        return await response.Content.ReadAsStringAsync();
     }
 
     private static string BlobUri(Uri container, string blob)
