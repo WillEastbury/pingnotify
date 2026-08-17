@@ -67,13 +67,3 @@ jobs:
           Set-Content -Path $manifestPath -Value $manifest -Encoding utf8
           Publish-Blob 'latest.json' $manifestPath 'application/json'
           Publish-Blob 'install.ps1' "${{ github.workspace }}\install.ps1" 'text/plain'
-
-          az storage blob upload `
-            --account-name $account `
-            --container-name $container `
-            --name install.ps1 `
-            --file "${{ github.workspace }}\install.ps1" `
-            --overwrite `
-            --content-type text/plain `
-            --sas-token "$sasToken" `
-            --output none
