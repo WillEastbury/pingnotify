@@ -334,7 +334,14 @@ internal sealed class BlobStore : IDisposable
         string machine,
         IReadOnlyDictionary<string, NotificationMetadata> metadata)
     {
-        var json = JsonSerializer.Serialize(metadata);
+        var published = DateTimeOffset.UtcNow;
+        var document = new Dictionary<string, object>
+        {
+            ["_pingnotify"] = new MachineSchedule(published, published.AddMinutes(10))
+        };
+        foreach (var item in metadata)
+            document[item.Key] = item.Value;
+        var json = JsonSerializer.Serialize(document);
         await PutAsync($"{machine}.json", json, "application/json");
     }
 
@@ -351,9 +358,15 @@ internal sealed class BlobStore : IDisposable
             try
             {
                 var json = await GetAsync(blobName);
-                var metadata = JsonSerializer.Deserialize<Dictionary<string, NotificationMetadata>>(json) ?? [];
-                result.AddRange(metadata.Select(item => new RemoteNotification(
-                    machine, item.Key, item.Value.Seq, item.Value.Last)));
+                using var document = JsonDocument.Parse(json);
+                foreach (var property in document.RootElement.EnumerateObject())
+                {
+                    if (property.NameEquals("_pingnotify"))
+                        continue;
+                    var metadata = property.Value.Deserialize<NotificationMetadata>();
+                    if (metadata is not null)
+                        result.Add(new RemoteNotification(machine, property.Name, metadata.Seq, metadata.Last));
+                }
             }
             catch (JsonException)
             {
@@ -437,4 +450,5 @@ internal sealed class BlobStore : IDisposable
 }
 
 internal sealed record NotificationMetadata(long Seq, DateTimeOffset Last);
+internal sealed record MachineSchedule(DateTimeOffset LastPublishedUtc, DateTimeOffset NextPublishUtc);
 internal sealed record RemoteNotification(string Machine, string Application, long Quantity, DateTimeOffset Last);

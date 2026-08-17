@@ -31,6 +31,15 @@ Set the user environment variable `notificationShare` to a container SAS URI. Th
 
 Each machine writes `<machine-name>.json` to the container. Other machines list and read the files, excluding their own machine file.
 
+Each machine file also includes a reserved `_pingnotify` block so readers can determine freshness:
+
+```json
+"_pingnotify": {
+  "lastPublishedUtc": "2026-08-17T14:40:00Z",
+  "nextPublishUtc": "2026-08-17T14:50:00Z"
+}
+```
+
 If `notificationShare` is not set, the app creates both `C:\PingNotify` and `\\tsclient\c\PingNotify` when possible. It uses the redirected path when available and falls back to `C:\PingNotify` when the RDP drive is unavailable.
 
 ## .NET build and deployment
