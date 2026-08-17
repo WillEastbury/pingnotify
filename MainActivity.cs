@@ -18,6 +18,8 @@ public sealed class MainActivity : Activity
     private TextView _results = null!;
     private Button _refresh = null!;
     private string? _sasUri;
+    private string _hostFilter = string.Empty;
+    private bool _isRunning;
     private int _readMinutes = 2;
     private readonly Handler _handler = new(Looper.MainLooper!);
     private readonly Action _scheduledRefresh = null!;
@@ -28,6 +30,7 @@ public sealed class MainActivity : Activity
         _http.Timeout = TimeSpan.FromSeconds(20);
         var preferences = GetPreferences(global::Android.Content.FileCreationMode.Private);
         _sasUri = preferences.GetString("notificationShare", null);
+        _hostFilter = preferences.GetString("hostFilter", string.Empty) ?? string.Empty;
         _readMinutes = preferences.GetInt("readMinutes", 2);
         _scheduledRefresh = () =>
         {
@@ -62,15 +65,24 @@ public sealed class MainActivity : Activity
             InputType = global::Android.Text.InputTypes.ClassNumber
         };
         root.AddView(readInput);
+        var hostInput = new EditText(this)
+        {
+            Hint = "Hosts to show (comma-separated, blank = all)",
+            Text = _hostFilter,
+            InputType = global::Android.Text.InputTypes.ClassText
+        };
+        root.AddView(hostInput);
         var save = new Button(this) { Text = "Save private read access" };
         save.Click += (_, _) =>
         {
             _sasUri = _sasInput.Text?.Trim();
             if (int.TryParse(readInput.Text, out var minutes) && minutes is >= 1 and <= 1440)
                 _readMinutes = minutes;
+            _hostFilter = hostInput.Text?.Trim() ?? string.Empty;
             GetPreferences(global::Android.Content.FileCreationMode.Private).Edit()?
                 .PutString("notificationShare", _sasUri)?
                 .PutInt("readMinutes", _readMinutes)?
+                .PutString("hostFilter", _hostFilter)?
                 .Apply();
             _ = RefreshAsync();
         };
@@ -119,7 +131,12 @@ public sealed class MainActivity : Activity
                         rows.Add($"{machine}  ·  {property.Name}  ·  {quantity}");
                 }
             }
-            SetResults(rows);
+            var filters = _hostFilter.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            var visibleRows = filters.Length == 0
+                ? rows
+                : rows.Where(row => filters.Any(filter =>
+                    row.StartsWith(filter + "  ·", StringComparison.OrdinalIgnoreCase))).ToList();
+            SetResults(visibleRows);
         }
         catch (HttpRequestException ex)
         {
@@ -172,7 +189,30 @@ public sealed class MainActivity : Activity
                 ? "No pending notifications."
                 : string.Join(System.Environment.NewLine + System.Environment.NewLine, rows);
             _status.Text = $"Read {System.DateTime.Now:t}";
+            if (_isRunning)
+                ShowStatusNotification(rows.Count);
         });
+    }
+
+    private void ShowStatusNotification(int count)
+    {
+        if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
+        {
+            var channels = (NotificationManager)GetSystemService(NotificationService)!;
+            channels.CreateNotificationChannel(new NotificationChannel(
+                "pingnotify-status", "PingNotify status", NotificationImportance.Low));
+        }
+        if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu &&
+            CheckSelfPermission(global::Android.Manifest.Permission.PostNotifications) != Permission.Granted)
+            RequestPermissions([global::Android.Manifest.Permission.PostNotifications], 1001);
+
+        var notification = new Notification.Builder(this, "pingnotify-status")
+            .SetSmallIcon(Android.Resource.Drawable.IcDialogInfo)
+            .SetContentTitle("PingNotify")
+            .SetContentText(count == 0 ? "No pending notifications." : $"{count} pending app entries")
+            .SetOngoing(false)
+            .Build();
+        ((NotificationManager)GetSystemService(NotificationService)!).Notify(1001, notification);
     }
 
     private void SetStatus(string message) => RunOnUiThread(() => _status.Text = message);
@@ -181,12 +221,14 @@ public sealed class MainActivity : Activity
     protected override void OnResume()
     {
         base.OnResume();
+        _isRunning = true;
         _handler.RemoveCallbacksAndMessages(null);
         _handler.PostDelayed(_scheduledRefresh, _readMinutes * 60 * 1000L);
     }
 
     protected override void OnDestroy()
     {
+        _isRunning = false;
         _handler.RemoveCallbacksAndMessages(null);
         _http.Dispose();
         base.OnDestroy();

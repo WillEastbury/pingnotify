@@ -116,6 +116,8 @@ dotnet build .\PingNotify.Android.csproj
 
 On first launch, enter the private container SAS URI. The value is stored in Android app-private preferences; use a read/list-only SAS for the phone where possible. The app reads remote metadata every 2 minutes by default; the interval can be changed in the app and is stored locally. A manual Refresh button is also available.
 
+The Android app can filter displayed rows with a comma-separated host list. While the app is open, it also posts a local, content-free status notification showing only the number of pending app entries; it never sends that notification or any SAS data to Blob Storage.
+
 Android 403 errors usually mean the entered SAS is for the public download container or lacks `r` (read) and `l` (list) permissions. Enter the private `notificationShare` container SAS instead; never use the public release-download SAS.
 
 The repository’s **Build Android app** workflow also produces an APK artifact in GitHub Actions for sideloading.
