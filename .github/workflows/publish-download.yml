@@ -41,36 +41,32 @@ jobs:
           TEMP: ${{ runner.temp }}
         run: |
           $sasUri = [Uri]$env:SAS_URI
-          $account = $sasUri.Host.Split('.')[0]
-          $container = $sasUri.AbsolutePath.Trim('/')
-          $sasToken = $sasUri.Query.TrimStart('?')
-          if ([string]::IsNullOrWhiteSpace($account) -or [string]::IsNullOrWhiteSpace($container) -or [string]::IsNullOrWhiteSpace($sasToken)) {
+          if ([string]::IsNullOrWhiteSpace($sasUri.Query) -or [string]::IsNullOrWhiteSpace($sasUri.AbsolutePath)) {
             throw 'AZURE_CREDENTIALS_SAS_BLOB must be a complete container SAS URI.'
           }
+          $sasParts = $sasUri.AbsoluteUri -split '\?', 2
+          $baseUri = $sasParts[0].TrimEnd('/')
+          $sasQuery = $sasParts[1]
 
-          az storage blob upload `
-            --account-name $account `
-            --container-name $container `
-            --name PingNotify-latest.zip `
-            --file "$env:TEMP\PingNotify-latest.zip" `
-            --overwrite `
-            --content-type application/zip `
-            --sas-token "$sasToken" `
-            --output none
+          function Publish-Blob([string]$name, [string]$file, [string]$contentType) {
+            $blobUri = "$baseUri/$name`?$sasQuery"
+            Invoke-WebRequest `
+              -Uri $blobUri `
+              -Method Put `
+              -InFile $file `
+              -Headers @{ 'x-ms-blob-type' = 'BlockBlob'; 'x-ms-version' = '2021-12-02' } `
+              -ContentType $contentType `
+              -UseBasicParsing | Out-Null
+          }
+
+          Publish-Blob 'PingNotify-latest.zip' "$env:TEMP\PingNotify-latest.zip" 'application/zip'
 
           $manifest = @{ version = $env:RELEASE_VERSION; asset = "PingNotify-latest.zip" } |
             ConvertTo-Json -Compress
           $manifestPath = "$env:TEMP\latest.json"
           Set-Content -Path $manifestPath -Value $manifest -Encoding utf8
-          az storage blob upload `
-            --account-name $account `
-            --container-name $container `
-            --name latest.json `
-            --file $manifestPath `
-            --overwrite `
-            --content-type application/json `
-            --sas-token "$sasToken" `
-            --output none
+          Publish-Blob 'latest.json' $manifestPath 'application/json'
+          Publish-Blob 'install.ps1' "${{ github.workspace }}\install.ps1" 'text/plain'
 
           az storage blob upload `
             --account-name $account `
