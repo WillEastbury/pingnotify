@@ -44,9 +44,9 @@ git clone https://github.com/WillEastbury/pingnotify.git
 cd pingnotify
 ```
 
-The committed executable and dependencies are under:
+The self-contained release executable and dependencies are distributed in the latest GitHub release. A framework-dependent debug build, when present, is under:
 
-`bin\Debug\net8.0-windows10.0.19041.0\`
+`bin\Debug\net9.0-windows10.0.19041.0\`
 
 ### Configure storage
 
@@ -58,7 +58,7 @@ On first run without `notificationShare`, PingNotify asks how to proceed. Choose
 
 ### Build from source
 
-Install the .NET 8 SDK, then run:
+Install the .NET 9 SDK, then run:
 
 ```powershell
 dotnet restore .\PingNotify.csproj

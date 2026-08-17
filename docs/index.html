@@ -186,11 +186,11 @@
         <p class="lead">Download the latest tagged build, configure the user-scoped SAS environment variable, and package it with the included manifest for Windows notification-listener access.</p>
       </div>
       <div class="install">
-        <pre><code>$r=Invoke-RestMethod https://api.github.com/repos/WillEastbury/pingnotify/releases/latest;$z="$env:TEMP\PingNotify.zip";$x="$env:TEMP\PingNotify";Invoke-WebRequest $r.zipball_url -OutFile $z;Expand-Archive $z $x -Force;$s=Get-ChildItem $x -Directory|Select-Object -First 1;$i="$env:LOCALAPPDATA\PingNotify";New-Item $i -ItemType Directory -Force|Out-Null;Copy-Item "$($s.FullName)\bin\Debug\net8.0-windows10.0.19041.0\*" $i -Recurse -Force;Start-Process "$i\PingNotify.exe"</code></pre>
+        <pre><code>irm https://raw.githubusercontent.com/WillEastbury/pingnotify/master/install.ps1 | iex</code></pre>
         <div class="note">
           <h3>One important detail</h3>
           <p><code>notificationShare</code> should contain the complete container SAS URI, configured through Windows user environment variables. Never commit it to the repository.</p>
-          <p>The command follows the repository’s latest tagged release and installs its committed build into <code>%LOCALAPPDATA%\PingNotify</code>.</p>
+          <p>Review the small installer script before running it. It follows the latest tagged release, installs the self-contained build into <code>%LOCALAPPDATA%\PingNotify</code>, and launches the tray agent.</p>
           <a class="button" href="https://github.com/WillEastbury/pingnotify/releases/latest">View latest release ↗</a>
         </div>
       </div>
