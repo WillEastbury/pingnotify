@@ -29,3 +29,21 @@ jobs:
         with:
           name: PingNotify-Android
           path: bin\Release\net10.0-android\**\*.apk
+
+      - name: Publish Android package to Blob
+        env:
+          SAS_URI: ${{ secrets.AZURE_CREDENTIALS_SAS_BLOB }}
+        shell: pwsh
+        run: |
+          $apk = Get-ChildItem "bin\Release\net10.0-android" -Filter "*.apk" -Recurse | Select-Object -First 1
+          if ($null -eq $apk) { throw "Android APK was not produced." }
+          $sasUri = [Uri]$env:SAS_URI
+          $sasParts = $sasUri.AbsoluteUri -split '\?', 2
+          $blobUri = "$($sasParts[0].TrimEnd('/'))/PingNotify-Android-latest.apk`?$($sasParts[1])"
+          Invoke-WebRequest `
+            -Uri $blobUri `
+            -Method Put `
+            -InFile $apk.FullName `
+            -Headers @{ 'x-ms-blob-type' = 'BlockBlob'; 'x-ms-version' = '2021-12-02' } `
+            -ContentType 'application/vnd.android.package-archive' `
+            -UseBasicParsing | Out-Null

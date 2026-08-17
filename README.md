@@ -120,6 +120,8 @@ Android 403 errors usually mean the entered SAS is for the public download conta
 
 The repository’s **Build Android app** workflow also produces an APK artifact in GitHub Actions for sideloading.
 
+The same workflow publishes the latest APK at `https://notificationstatus.blob.core.windows.net/public/PingNotify-Android-latest.apk` when the public Blob SAS secret is configured.
+
 `Package.appxmanifest` declares the `userNotificationListener` capability. Deploy the executable as an MSIX/package using that manifest; an unpackaged WinForms executable cannot receive notification-listener access. Windows requests listener consent on first use.
 
 The repository currently contains the compiled executable, but not a signed MSIX installer. Running `PingNotify.exe` directly is useful for checking the tray UI and storage connectivity; package it with the manifest before relying on Windows notification-listener access.
