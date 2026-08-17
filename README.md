@@ -68,10 +68,10 @@ Expected paths:
 Run the installer directly from the anonymous Blob endpoint:
 
 ```powershell
-irm https://notificationstatus.blob.core.windows.net/public/install.ps1 | iex
+irm https://willeastbury.github.io/pingnotify/install.ps1 | iex
 ```
 
-The installer downloads `latest.json` and `PingNotify-latest.zip` from Blob Storage; it does not contact GitHub. A GitHub Action publishes the installer script, manifest, and ZIP to the public container addressed by `AZURE_CREDENTIALS_SAS_BLOB` whenever a GitHub release is published. The secret must contain the complete container SAS URI with write/create permissions.
+This short GitHub Pages bootstrap fetches the installer from Blob Storage. The installer then downloads `latest.json` and `PingNotify-latest.zip` from Blob Storage; it does not contact GitHub. A GitHub Action publishes the installer script, manifest, and ZIP to the public container addressed by `AZURE_CREDENTIALS_SAS_BLOB` whenever a GitHub release is published. The secret must contain the complete container SAS URI with write/create permissions.
 
 ### Configure storage
 
