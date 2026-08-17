@@ -69,7 +69,7 @@ dotnet build .\PingNotify.csproj
 
 The repository currently contains the compiled executable, but not a signed MSIX installer. Running `PingNotify.exe` directly is useful for checking the tray UI and storage connectivity; package it with the manifest before relying on Windows notification-listener access.
 
-PingNotify checks the latest GitHub release when it starts and every 12 hours afterward. If a newer self-contained `PingNotify-win-x64.zip` release is available, it asks for confirmation, replaces the installed files, and restarts.
+PingNotify checks the latest GitHub release when it starts and every 12 hours afterward. The next-check time is persisted under `%LOCALAPPDATA%\PingNotify`, so restarting the app does not bypass the interval. If GitHub returns HTTP 429, checking is paused for one hour. If a newer self-contained `PingNotify-win-x64*.zip` release is available, it asks for confirmation, replaces the installed files, and restarts.
 
 ### Slack notifications
 

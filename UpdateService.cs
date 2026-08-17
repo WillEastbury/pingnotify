@@ -9,6 +9,10 @@ internal sealed class UpdateService : IDisposable
 {
     private const string Repository = "WillEastbury/pingnotify";
     private readonly HttpClient _http = new();
+    private readonly string _checkStatePath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "PingNotify",
+        "update-check.json");
     private int _checking;
 
     public async Task<AvailableUpdate?> GetAvailableUpdateAsync()
@@ -17,9 +21,27 @@ internal sealed class UpdateService : IDisposable
             return null;
         try
         {
-            using var response = await _http.GetAsync(
+            if (File.Exists(_checkStatePath))
+            {
+                var state = JsonSerializer.Deserialize<UpdateCheckState>(
+                    await File.ReadAllTextAsync(_checkStatePath));
+                if (state?.NextCheckUtc > DateTimeOffset.UtcNow)
+                    return null;
+            }
+
+            using var request = new HttpRequestMessage(
+                HttpMethod.Get,
                 $"https://api.github.com/repos/{Repository}/releases/latest");
+            request.Headers.UserAgent.ParseAdd("PingNotify-Updater/0.0.6");
+            request.Headers.Accept.ParseAdd("application/vnd.github+json");
+            using var response = await _http.SendAsync(request);
+            if ((int)response.StatusCode == 429)
+            {
+                await SaveNextCheckAsync(DateTimeOffset.UtcNow.AddHours(1));
+                return null;
+            }
             response.EnsureSuccessStatusCode();
+            await SaveNextCheckAsync(DateTimeOffset.UtcNow.AddHours(12));
             using var document = JsonDocument.Parse(await response.Content.ReadAsStreamAsync());
             var root = document.RootElement;
             var tag = root.GetProperty("tag_name").GetString()?.TrimStart('v');
@@ -31,7 +53,9 @@ internal sealed class UpdateService : IDisposable
                 return null;
 
             var asset = root.GetProperty("assets").EnumerateArray()
-                .FirstOrDefault(item => item.GetProperty("name").GetString() == "PingNotify-win-x64.zip");
+                .FirstOrDefault(item =>
+                    item.GetProperty("name").GetString()?.StartsWith("PingNotify-win-x64", StringComparison.OrdinalIgnoreCase) == true &&
+                    item.GetProperty("name").GetString()?.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) == true);
             if (asset.ValueKind == JsonValueKind.Undefined)
                 return null;
 
@@ -40,10 +64,19 @@ internal sealed class UpdateService : IDisposable
                 asset.GetProperty("browser_download_url").GetString()
                     ?? throw new InvalidOperationException("The update asset URL is missing."));
         }
+
         finally
         {
             Volatile.Write(ref _checking, 0);
         }
+    }
+
+    private async Task SaveNextCheckAsync(DateTimeOffset nextCheckUtc)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(_checkStatePath)!);
+        await File.WriteAllTextAsync(
+            _checkStatePath,
+            JsonSerializer.Serialize(new UpdateCheckState(nextCheckUtc)));
     }
 
     public async Task InstallAsync(AvailableUpdate update, int currentProcessId)
@@ -96,3 +129,4 @@ internal sealed class UpdateService : IDisposable
 }
 
 internal sealed record AvailableUpdate(Version Version, string AssetUrl);
+internal sealed record UpdateCheckState(DateTimeOffset NextCheckUtc);
