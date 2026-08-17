@@ -71,6 +71,10 @@ The repository currently contains the compiled executable, but not a signed MSIX
 
 PingNotify checks the latest GitHub release when it starts and every 12 hours afterward. If a newer self-contained `PingNotify-win-x64.zip` release is available, it asks for confirmation, replaces the installed files, and restarts.
 
+### Slack notifications
+
+Slack must be configured to deliver notifications through **Windows Action Center/native notifications**. Slack’s own in-app popups are not Windows toast notifications and cannot be observed by `UserNotificationListener`. Also verify that Windows notifications are enabled for Slack and that Slack is installed and launched from its registered Start menu shortcut.
+
 ## Tray features
 
 The tray icon changes when another machine has pending notifications. Hovering over it opens a borderless flyout containing the full `Machine: Application (Quantity)` list. The context menu provides the same list plus:

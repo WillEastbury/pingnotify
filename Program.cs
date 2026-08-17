@@ -92,7 +92,7 @@ internal sealed class TrayContext : ApplicationContext
             var listener = UserNotificationListener.Current;
             var notifications = await listener.GetNotificationsAsync(NotificationKinds.Toast);
             var local = notifications
-                .GroupBy(notification => notification.AppInfo?.DisplayInfo?.DisplayName ?? "Unknown app")
+                .GroupBy(GetApplicationName)
                 .ToDictionary(
                     group => group.Key,
                     group => new NotificationMetadata(
@@ -117,6 +117,20 @@ internal sealed class TrayContext : ApplicationContext
         {
             ShowError($"PingNotify refresh failed: {ex.Message}");
         }
+    }
+
+    private static string GetApplicationName(UserNotification notification)
+    {
+        var displayName = notification.AppInfo?.DisplayInfo?.DisplayName;
+        if (!string.IsNullOrWhiteSpace(displayName))
+            return displayName;
+
+        var appUserModelId = notification.AppInfo?.AppUserModelId;
+        if (!string.IsNullOrWhiteSpace(appUserModelId) &&
+            appUserModelId.Contains("slack", StringComparison.OrdinalIgnoreCase))
+            return "Slack";
+
+        return string.IsNullOrWhiteSpace(appUserModelId) ? "Unknown app" : appUserModelId;
     }
 
     private async Task CheckForUpdateAsync()
