@@ -104,6 +104,20 @@ dotnet restore .\PingNotify.csproj
 dotnet build .\PingNotify.csproj
 ```
 
+## Android read-only app
+
+`PingNotify.Android.csproj` is a separate Android app. It reads the private `notificationShare` container using only HTTPS `GET` requests, then displays pending entries as `Machine · Application · Quantity`. It has no upload, update, notification-listener, or Blob write code, so the phone cannot publish or send notification data.
+
+Build it with the .NET 10 SDK and Android workload:
+
+```powershell
+dotnet build .\PingNotify.Android.csproj
+```
+
+On first launch, enter the private container SAS URI. The value is stored in Android app-private preferences; use a read/list-only SAS for the phone where possible. The app refreshes automatically every 2.5 minutes and has a manual Refresh button.
+
+The repository’s **Build Android app** workflow also produces an APK artifact in GitHub Actions for sideloading.
+
 `Package.appxmanifest` declares the `userNotificationListener` capability. Deploy the executable as an MSIX/package using that manifest; an unpackaged WinForms executable cannot receive notification-listener access. Windows requests listener consent on first use.
 
 The repository currently contains the compiled executable, but not a signed MSIX installer. Running `PingNotify.exe` directly is useful for checking the tray UI and storage connectivity; package it with the manifest before relying on Windows notification-listener access.

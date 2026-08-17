@@ -1,0 +1,31 @@
+name: Build Android app
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'PingNotify.Android.csproj'
+      - 'MainActivity.cs'
+      - 'AndroidManifest.xml'
+      - 'Resources/**'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore Android workload
+        run: dotnet workload restore .\PingNotify.Android.csproj
+      - name: Build Android package
+        run: dotnet publish .\PingNotify.Android.csproj -c Release -f net10.0-android
+      - name: Upload Android package
+        uses: actions/upload-artifact@v4
+        with:
+          name: PingNotify-Android
+          path: bin\Release\net10.0-android\**\*.apk
