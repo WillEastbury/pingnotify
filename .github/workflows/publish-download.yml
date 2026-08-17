@@ -17,6 +17,9 @@ jobs:
   publish:
     runs-on: windows-latest
     steps:
+      - name: Checkout installer
+        uses: actions/checkout@v4
+
       - name: Download release asset
         env:
           GH_TOKEN: ${{ github.token }}
@@ -52,7 +55,7 @@ jobs:
             --file "$env:TEMP\PingNotify-latest.zip" `
             --overwrite `
             --content-type application/zip `
-            --sas-token $sasToken `
+            --sas-token "$sasToken" `
             --output none
 
           $manifest = @{ version = $env:RELEASE_VERSION; asset = "PingNotify-latest.zip" } |
@@ -66,5 +69,15 @@ jobs:
             --file $manifestPath `
             --overwrite `
             --content-type application/json `
-            --sas-token $sasToken `
+            --sas-token "$sasToken" `
+            --output none
+
+          az storage blob upload `
+            --account-name $account `
+            --container-name $container `
+            --name install.ps1 `
+            --file "${{ github.workspace }}\install.ps1" `
+            --overwrite `
+            --content-type text/plain `
+            --sas-token "$sasToken" `
             --output none
