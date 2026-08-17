@@ -26,6 +26,8 @@ internal sealed class TrayContext : ApplicationContext
     private readonly NotifyIcon _icon;
     private readonly ContextMenuStrip _menu = new();
     private readonly System.Windows.Forms.Timer _timer;
+    private readonly System.Windows.Forms.Timer _updateTimer;
+    private readonly UpdateService _updates = new();
     private readonly Form _flyout;
     private readonly Label _flyoutLabel;
     private readonly System.Windows.Forms.Timer _flyoutTimer;
@@ -56,8 +58,12 @@ internal sealed class TrayContext : ApplicationContext
         _timer = new System.Windows.Forms.Timer { Interval = 5000 };
         _timer.Tick += async (_, _) => await RefreshAsync();
         _timer.Start();
+        _updateTimer = new System.Windows.Forms.Timer { Interval = 12 * 60 * 60 * 1000 };
+        _updateTimer.Tick += async (_, _) => await CheckForUpdateAsync();
+        _updateTimer.Start();
         RebuildMenu();
         _ = InitializeAsync();
+        _ = CheckForUpdateAsync();
     }
 
     private async Task InitializeAsync()
@@ -105,10 +111,36 @@ internal sealed class TrayContext : ApplicationContext
                     _flyoutLabel.Text = FormatRemoteList(_remote);
                 RebuildMenu();
             }
+
         }
         catch (Exception ex)
         {
             ShowError($"PingNotify refresh failed: {ex.Message}");
+        }
+    }
+
+    private async Task CheckForUpdateAsync()
+    {
+        try
+        {
+            var update = await _updates.GetAvailableUpdateAsync();
+            if (update is null)
+                return;
+
+            var choice = MessageBox.Show(
+                $"PingNotify {update.Version} is available. Install it now and restart?",
+                "PingNotify update",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Information);
+            if (choice != DialogResult.Yes)
+                return;
+
+            await _updates.InstallAsync(update, Environment.ProcessId);
+            Application.Exit();
+        }
+        catch (Exception ex)
+        {
+            ShowError($"PingNotify update failed: {ex.Message}");
         }
     }
 
@@ -180,12 +212,14 @@ internal sealed class TrayContext : ApplicationContext
     protected override void ExitThreadCore()
     {
         _timer.Stop();
+        _updateTimer.Stop();
         _flyoutTimer.Stop();
         _icon.Visible = false;
         _icon.Dispose();
         _flyout.Dispose();
         _menu.Dispose();
         _store.Dispose();
+        _updates.Dispose();
         base.ExitThreadCore();
     }
 
