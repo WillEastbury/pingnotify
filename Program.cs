@@ -433,7 +433,8 @@ internal sealed class BlobStore : IDisposable
         using var request = new HttpRequestMessage(HttpMethod.Put, BlobUri(blobName));
         request.Headers.TryAddWithoutValidation("x-ms-version", "2021-12-02");
         request.Headers.TryAddWithoutValidation("x-ms-blob-type", "BlockBlob");
-        request.Content = new StringContent(content, Encoding.UTF8, mediaType);
+        var baseMediaType = mediaType.Split(';', 2)[0].Trim();
+        request.Content = new StringContent(content, Encoding.UTF8, baseMediaType);
         using var response = await _http.SendAsync(request);
         response.EnsureSuccessStatusCode();
     }
