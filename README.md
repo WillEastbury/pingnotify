@@ -35,12 +35,37 @@ If `notificationShare` is not set, the app creates both `C:\PingNotify` and `\\t
 
 ## .NET build and deployment
 
+### Download the repository
+
+From GitHub, select **Code → Download ZIP**, extract it, and open a PowerShell terminal in the extracted folder. Or clone it:
+
+```powershell
+git clone https://github.com/WillEastbury/pingnotify.git
+cd pingnotify
+```
+
+The committed executable and dependencies are under:
+
+`bin\Debug\net8.0-windows10.0.19041.0\`
+
+### Configure storage
+
+Set `notificationShare` as a **user** environment variable using the complete container SAS URI. Do not commit the SAS URI or place it in a public script. Sign out and back in, or restart the agent, after changing the variable.
+
+If the variable is omitted, the app creates and uses the local fallback directories described above.
+
+### Build from source
+
+Install the .NET 8 SDK, then run:
+
 ```powershell
 dotnet restore .\PingNotify.csproj
 dotnet build .\PingNotify.csproj
 ```
 
 `Package.appxmanifest` declares the `userNotificationListener` capability. Deploy the executable as an MSIX/package using that manifest; an unpackaged WinForms executable cannot receive notification-listener access. Windows requests listener consent on first use.
+
+The repository currently contains the compiled executable, but not a signed MSIX installer. Running `PingNotify.exe` directly is useful for checking the tray UI and storage connectivity; package it with the manifest before relying on Windows notification-listener access.
 
 ## Tray features
 
