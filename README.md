@@ -71,6 +71,8 @@ The repository currently contains the compiled executable, but not a signed MSIX
 
 PingNotify checks the latest GitHub release when it starts and every 12 hours afterward. The next-check time is persisted under `%LOCALAPPDATA%\PingNotify`, so restarting the app does not bypass the interval. If GitHub returns HTTP 429, checking is paused for one hour. If a newer self-contained `PingNotify-win-x64*.zip` release is available, it asks for confirmation, replaces the installed files, and restarts.
 
+Local notification metadata is published every 10 minutes. Remote machine metadata is scanned every 2.5 minutes.
+
 ### Slack notifications
 
 Slack must be configured to deliver notifications through **Windows Action Center/native notifications**. Slack’s own in-app popups are not Windows toast notifications and cannot be observed by `UserNotificationListener`. Also verify that Windows notifications are enabled for Slack and that Slack is installed and launched from its registered Start menu shortcut.

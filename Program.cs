@@ -25,7 +25,8 @@ internal sealed class TrayContext : ApplicationContext
     private readonly BlobStore _store;
     private readonly NotifyIcon _icon;
     private readonly ContextMenuStrip _menu = new();
-    private readonly System.Windows.Forms.Timer _timer;
+    private readonly System.Windows.Forms.Timer _localTimer;
+    private readonly System.Windows.Forms.Timer _remoteTimer;
     private readonly System.Windows.Forms.Timer _updateTimer;
     private readonly UpdateService _updates = new();
     private readonly Form _flyout;
@@ -55,9 +56,12 @@ internal sealed class TrayContext : ApplicationContext
                 _flyout.Hide();
         };
         _flyoutTimer.Start();
-        _timer = new System.Windows.Forms.Timer { Interval = 5000 };
-        _timer.Tick += async (_, _) => await RefreshAsync();
-        _timer.Start();
+        _localTimer = new System.Windows.Forms.Timer { Interval = 10 * 60 * 1000 };
+        _localTimer.Tick += async (_, _) => await PublishLocalMetadataAsync();
+        _localTimer.Start();
+        _remoteTimer = new System.Windows.Forms.Timer { Interval = 150 * 1000 };
+        _remoteTimer.Tick += async (_, _) => await RefreshRemoteMetadataAsync();
+        _remoteTimer.Start();
         _updateTimer = new System.Windows.Forms.Timer { Interval = 12 * 60 * 60 * 1000 };
         _updateTimer.Tick += async (_, _) => await CheckForUpdateAsync();
         _updateTimer.Start();
@@ -77,7 +81,8 @@ internal sealed class TrayContext : ApplicationContext
                 ShowError($"Notification listener access is {access}. Enable access in Windows Settings.");
                 return;
             }
-            await RefreshAsync();
+            await PublishLocalMetadataAsync();
+            await RefreshRemoteMetadataAsync();
         }
         catch (Exception ex)
         {
@@ -85,7 +90,7 @@ internal sealed class TrayContext : ApplicationContext
         }
     }
 
-    private async Task RefreshAsync()
+    private async Task PublishLocalMetadataAsync()
     {
         try
         {
@@ -102,7 +107,17 @@ internal sealed class TrayContext : ApplicationContext
             if (slackFallback is not null)
                 local["Slack"] = slackFallback;
             await _store.WriteMachineMetadataAsync(_machineName, local);
+        }
+        catch (Exception ex)
+        {
+            ShowError($"PingNotify local metadata refresh failed: {ex.Message}");
+        }
+    }
 
+    private async Task RefreshRemoteMetadataAsync()
+    {
+        try
+        {
             _remote = await _store.ReadOtherMachinesAsync(_machineName);
             var nextSignature = string.Join(';', _remote.Select(item =>
                 $"{item.Machine}|{item.Application}|{item.Quantity}|{item.Last:O}"));
@@ -118,7 +133,7 @@ internal sealed class TrayContext : ApplicationContext
         }
         catch (Exception ex)
         {
-            ShowError($"PingNotify refresh failed: {ex.Message}");
+            ShowError($"PingNotify remote metadata refresh failed: {ex.Message}");
         }
     }
 
@@ -228,7 +243,8 @@ internal sealed class TrayContext : ApplicationContext
 
     protected override void ExitThreadCore()
     {
-        _timer.Stop();
+        _localTimer.Stop();
+        _remoteTimer.Stop();
         _updateTimer.Stop();
         _flyoutTimer.Stop();
         _icon.Visible = false;
