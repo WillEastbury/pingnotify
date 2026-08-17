@@ -381,7 +381,7 @@ internal sealed class BlobStore : IDisposable
     public Task<string> ReadSharedTextAsync() => GetAsync("remote-copy.txt", missingAsEmpty: true);
 
     public Task WriteSharedTextAsync(string text) =>
-        PutAsync("remote-copy.txt", text, "text/plain; charset=utf-8");
+        PutAsync("remote-copy.txt", text, "text/plain");
 
     private async Task<IReadOnlyList<string>> ListBlobsAsync()
     {
