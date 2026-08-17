@@ -11,6 +11,6 @@
     <AndroidUseLatestPlatformSdk>true</AndroidUseLatestPlatformSdk>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Remove="Program.cs;UpdateService.cs;TextDialog.cs;StorageSetup.cs;NeutralIcon.cs;UiAutomationNotificationSource.cs" />
+    <Compile Remove="Program.cs;UpdateService.cs;TextDialog.cs;StorageSetup.cs;PollingSettings.cs;NeutralIcon.cs;UiAutomationNotificationSource.cs" />
   </ItemGroup>
 </Project>

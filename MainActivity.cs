@@ -20,7 +20,7 @@ public sealed class MainActivity : Activity
     private string? _sasUri;
     private int _readMinutes = 2;
     private readonly Handler _handler = new(Looper.MainLooper!);
-    private readonly Action _scheduledRefresh;
+    private readonly Action _scheduledRefresh = null!;
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
