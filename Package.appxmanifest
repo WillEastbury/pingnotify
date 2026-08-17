@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  IgnorableNamespaces="uap">
+  <Identity Name="PingNotify" Publisher="CN=PingNotify" Version="1.0.0.0" />
+  <Properties>
+    <DisplayName>PingNotify</DisplayName>
+    <PublisherDisplayName>PingNotify</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+  <Resources>
+    <Resource Language="en-us" />
+  </Resources>
+  <Applications>
+    <Application Id="PingNotify" Executable="PingNotify.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements AppListEntry="none" DisplayName="PingNotify" />
+    </Application>
+  </Applications>
+  <Capabilities>
+    <uap:Capability Name="userNotificationListener" />
+  </Capabilities>
+</Package>
