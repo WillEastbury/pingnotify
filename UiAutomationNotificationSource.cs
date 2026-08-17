@@ -38,30 +38,30 @@ internal static class UiAutomationNotificationSource
         }
         catch (ElementNotAvailableException)
         {
-            return null;
+            return new Dictionary<string, NotificationMetadata>();
         }
         catch (ElementNotEnabledException)
         {
-            return null;
+            return new Dictionary<string, NotificationMetadata>();
         }
         catch (InvalidOperationException)
         {
-            return null;
+            return new Dictionary<string, NotificationMetadata>();
         }
         catch (TypeInitializationException)
         {
             _unavailable = true;
-            return null;
+            return new Dictionary<string, NotificationMetadata>();
         }
         catch (FileNotFoundException)
         {
             _unavailable = true;
-            return null;
+            return new Dictionary<string, NotificationMetadata>();
         }
         catch (FileLoadException)
         {
             _unavailable = true;
-            return null;
+            return new Dictionary<string, NotificationMetadata>();
         }
     }
 }
