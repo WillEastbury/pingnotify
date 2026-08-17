@@ -32,6 +32,7 @@ internal sealed class TrayContext : ApplicationContext
     private readonly System.Windows.Forms.Timer _remoteTimer;
     private readonly System.Windows.Forms.Timer _updateTimer;
     private readonly UpdateService _updates = new();
+    private bool _listenerAttached;
     private readonly Form _flyout;
     private readonly Label _flyoutLabel;
     private readonly System.Windows.Forms.Timer _flyoutTimer;
@@ -84,6 +85,11 @@ internal sealed class TrayContext : ApplicationContext
             {
                 ShowError($"Notification listener access is {access}. Enable access in Windows Settings.");
                 return;
+            }
+            if (!_listenerAttached)
+            {
+                listener.NotificationChanged += async (_, _) => await PublishLocalMetadataAsync();
+                _listenerAttached = true;
             }
             await PublishLocalMetadataAsync();
             await RefreshRemoteMetadataAsync();
