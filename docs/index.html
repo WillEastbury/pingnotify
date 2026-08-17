@@ -189,7 +189,8 @@
         <pre><code>irm https://tinyurl.com/pingnotify | iex</code></pre>
         <div class="note">
           <h3>One important detail</h3>
-          <p><code>notificationShare</code> should contain the complete container SAS URI, configured through Windows user environment variables. Never commit it to the repository.</p>
+          <p><code>notificationShare</code> should contain the complete private-container SAS URI, configured through Windows user environment variables. It needs read, write, create, list, and delete permissions. Never commit it or enable anonymous access.</p>
+          <p>Maintainers separately configure the GitHub Action’s <code>AZURE_CREDENTIALS_SAS_BLOB</code> secret for the public release container. See the <a href="https://learn.microsoft.com/azure/storage/blobs/anonymous-read-access-configure">Azure anonymous blob access guide</a>.</p>
           <p>Review the small installer script before running it. The first run downloads the latest Blob-hosted build into <code>%LOCALAPPDATA%\PingNotify</code>, creates Start Menu and sign-in Startup shortcuts, and launches the tray agent. Later runs use the local copy without contacting GitHub; use <code>-ForceUpdate</code> only when you want to check for a new release.</p>
           <a class="button" href="https://github.com/WillEastbury/pingnotify/releases/latest">View latest release ↗</a>
         </div>

@@ -21,13 +21,21 @@ The resulting machine file contains metadata only:
 
 ## Azure storage
 
-Set the user environment variable `notificationShare` to a container SAS URI. The SAS must allow:
+### Private notification storage
+
+Create a private container and set the user environment variable `notificationShare` to its complete container SAS URI. The SAS must allow:
 
 - Read (`r`)
 - Write (`w`)
 - Create (`c`)
 - List (`l`)
 - Delete (`d`) for one-shot Remote Paste cleanup
+
+Azure setup guides:
+
+- [Create a user delegation SAS](https://learn.microsoft.com/azure/storage/blobs/storage-blob-user-delegation-sas-create-cli)
+- [Create and manage containers](https://learn.microsoft.com/azure/storage/blobs/storage-blob-containers-portal)
+- [SAS overview and security guidance](https://learn.microsoft.com/azure/storage/blobs/sas-overview)
 
 Each machine writes `<machine-name>.json` to the container. Other machines list and read the files, excluding their own machine file.
 
@@ -71,11 +79,17 @@ Run the installer directly from the anonymous Blob endpoint:
 irm https://tinyurl.com/pingnotify | iex
 ```
 
-This TinyURL currently redirects directly to the Blob-hosted installer. The installer then downloads `latest.json` and `PingNotify-latest.zip` from Blob Storage; it does not contact GitHub. A GitHub Action publishes the installer script, manifest, and ZIP to the public container addressed by `AZURE_CREDENTIALS_SAS_BLOB` whenever a GitHub release is published. The secret must contain the complete container SAS URI with write/create permissions.
+This TinyURL currently redirects directly to the Blob-hosted installer. The installer then downloads `latest.json` and `PingNotify-latest.zip` from Blob Storage; it does not contact GitHub.
+
+### Public release downloads
+
+The public release container is separate from private notification storage and contains only the installer, manifest, and application ZIP. Maintainers configure the GitHub Actions secret `AZURE_CREDENTIALS_SAS_BLOB` with a complete container SAS URI granting write (`w`) and create (`c`) permissions. Anonymous blob read access must be enabled on that container.
+
+Azure guide: [Configure anonymous read access for blob data](https://learn.microsoft.com/azure/storage/blobs/anonymous-read-access-configure)
 
 ### Configure storage
 
-Set `notificationShare` as a **user** environment variable using the complete container SAS URI. Do not commit the SAS URI or place it in a public script. Sign out and back in, or restart the agent, after changing the variable.
+Do not reuse the public download SAS for `notificationShare`. Use a separate private container SAS, and never commit either SAS or place it in a public script. Sign out and back in, or restart the agent, after changing the variable.
 
 If the variable is omitted, the app creates and uses the local fallback directories described above.
 
