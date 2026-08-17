@@ -11,7 +11,9 @@ $archive = Join-Path $env:TEMP 'PingNotify-latest.zip'
 try {
     Write-Host 'Finding the latest PingNotify release...'
     $release = Invoke-RestMethod "https://api.github.com/repos/$repository/releases/latest"
-    $asset = @($release.assets | Where-Object { $_.name -eq 'PingNotify-win-x64.zip' }) | Select-Object -First 1
+    $asset = @($release.assets | Where-Object {
+        $_.name -like 'PingNotify-win-x64*.zip'
+    }) | Select-Object -First 1
     $downloadUri = if ($null -ne $asset) { $asset.browser_download_url } else { $release.zipball_url }
     if ([string]::IsNullOrWhiteSpace($downloadUri)) {
         throw 'The latest release does not provide a downloadable build or source archive.'
