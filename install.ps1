@@ -1,10 +1,20 @@
 [CmdletBinding()]
 param(
-    [string]$InstallPath = (Join-Path $env:LOCALAPPDATA 'PingNotify')
+    [string]$InstallPath = (Join-Path $env:LOCALAPPDATA 'PingNotify'),
+    [switch]$ForceUpdate
 )
 
 $ErrorActionPreference = 'Stop'
 $repository = 'WillEastbury/pingnotify'
+$installedExecutable = Join-Path $InstallPath 'PingNotify.exe'
+
+if ((Test-Path -LiteralPath $installedExecutable -PathType Leaf) -and -not $ForceUpdate) {
+    Write-Host "PingNotify is already installed at $InstallPath."
+    Write-Host 'Starting the local installation without contacting GitHub.'
+    Start-Process -FilePath $installedExecutable
+    return
+}
+
 $temporaryRoot = Join-Path $env:TEMP ('PingNotify-install-' + [guid]::NewGuid().ToString('N'))
 $archive = Join-Path $env:TEMP 'PingNotify-latest.zip'
 

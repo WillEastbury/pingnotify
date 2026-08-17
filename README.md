@@ -57,6 +57,8 @@ The self-contained release executable and dependencies are distributed in the la
 
 `bin\Debug\net9.0-windows10.0.19041.0\`
 
+The installer is idempotent: after the first install, running it again starts the local copy without contacting GitHub. Use `.\install.ps1 -ForceUpdate` when you explicitly want to check for and install the latest release. PingNotify itself performs its separate, rate-limited update check every 12 hours.
+
 ### Configure storage
 
 Set `notificationShare` as a **user** environment variable using the complete container SAS URI. Do not commit the SAS URI or place it in a public script. Sign out and back in, or restart the agent, after changing the variable.
